@@ -1,0 +1,12 @@
+{
+  "required": true,
+  "minVersion": "0.8",
+  "package": "max.singer.arrow.client.mixin",
+  "compatibilityLevel": "JAVA_21",
+  "client": [
+    "SoundHitMixin"
+  ],
+  "injectors": {
+    "defaultRequire": 1
+  }
+}

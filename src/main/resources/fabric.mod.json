@@ -1,0 +1,32 @@
+{
+  "schemaVersion": 1,
+  "id": "arrow",
+  "version": "${version}",
+  "name": "Slowfall Counter",
+  "description": "Helps you figure out how much longer your opponents slowfall effect will last!",
+  "authors": [
+    "Max Singer"
+  ],
+  "contact": {},
+  "license": "All-Rights-Reserved",
+  "icon": "assets/arrow/icon.png",
+  "environment": "client",
+  "entrypoints": {
+    "client": [
+      "max.singer.arrow.client.ArrowClient"
+    ]
+  },
+  "mixins": [
+    "arrow.mixins.json",
+    {
+      "config": "arrow.client.mixins.json",
+      "environment": "client"
+    }
+  ],
+  "depends": {
+    "fabricloader": ">=${loader_version}",
+    "fabric": "*",
+    "minecraft": ">=1.19",
+    "java": ">=17"
+  }
+}
