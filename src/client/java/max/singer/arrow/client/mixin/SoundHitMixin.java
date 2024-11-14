@@ -13,14 +13,11 @@ import max.singer.arrow.client.ArrowClient;
 
 @Mixin(SoundSystem.class)
 public class SoundHitMixin {
-
     @Inject(method = "play", at = @At("HEAD"))
     private void onSoundPlay(SoundInstance sound, CallbackInfo ci) {
         if (sound.getId().equals(SoundEvents.ENTITY_ARROW_HIT_PLAYER.getId())) {
-            System.out.println("Arrow hit player sound detected!");
             MinecraftClient client = MinecraftClient.getInstance();
             if (client.player != null) {
-                // Check player inventory for slow falling arrows
                 for (int i = 0; i < client.player.getInventory().size(); i++) {
                     ItemStack stack = client.player.getInventory().getStack(i);
                     String itemName = stack.getName().toString();

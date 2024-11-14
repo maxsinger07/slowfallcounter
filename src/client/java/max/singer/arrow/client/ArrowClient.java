@@ -5,6 +5,8 @@ import net.fabricmc.fabric.api.client.rendering.v1.HudRenderCallback;
 import net.fabricmc.fabric.api.client.command.v2.ClientCommandRegistrationCallback;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.text.Text;
+import net.minecraft.sound.SoundEvents;
+import net.minecraft.sound.SoundCategory;
 import net.fabricmc.loader.api.FabricLoader;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
@@ -20,6 +22,7 @@ public class ArrowClient implements ClientModInitializer {
     private static int timerX = 10;
     private static int timerY = 10;
     private static float scale = 1.0f;
+    private static boolean expireAlertEnabled = true;
     private static final int MOVE_AMOUNT = 5;
     private static final String TIMER_TEXT = "§fSlowfall Timer: ";
     private static final Path CONFIG_PATH = FabricLoader.getInstance().getConfigDir().resolve("slowfall_timer.json");
@@ -29,6 +32,7 @@ public class ArrowClient implements ClientModInitializer {
         int x = 10;
         int y = 10;
         float scale = 1.0f;
+        boolean expireAlertEnabled = true;
     }
 
     @Override
@@ -41,8 +45,9 @@ public class ArrowClient implements ClientModInitializer {
                 long currentTime = System.currentTimeMillis();
                 int secondsLeft = (int)((timerEndTime - currentTime) / 1000);
 
-                // Reset timer if it hits 0
                 if (secondsLeft <= 0) {
+                    // Natural timer expiration
+                    checkAndPlayExpireAlert();
                     timerEndTime = 0;
                     return;
                 }
@@ -54,18 +59,16 @@ public class ArrowClient implements ClientModInitializer {
                     float scaledX = timerX / scale;
                     float scaledY = timerY / scale;
 
-                    // Color for timer based on time remaining
                     String timeColor;
                     if (secondsLeft > 14) {
-                        timeColor = "§a"; // Green
+                        timeColor = "§a";
                     } else if (secondsLeft > 6) {
-                        timeColor = "§e"; // Yellow
+                        timeColor = "§e";
                     } else {
-                        timeColor = "§c"; // Red
+                        timeColor = "§c";
                     }
                     String timeText = timeColor + secondsLeft + "s";
 
-                    // Draw the complete text
                     String fullText = TIMER_TEXT + timeText;
                     drawContext.drawText(
                             client.textRenderer,
@@ -121,6 +124,14 @@ public class ArrowClient implements ClientModInitializer {
                                         context.getSource().sendFeedback(Text.literal("§aTimer size set to " + (scale * 100) + "%"));
                                         return 1;
                                     })))
+                    .then(literal("togglealert")
+                            .executes(context -> {
+                                expireAlertEnabled = !expireAlertEnabled;
+                                saveConfig();
+                                String status = expireAlertEnabled ? "enabled" : "disabled";
+                                context.getSource().sendFeedback(Text.literal("§aExpire alert " + status));
+                                return 1;
+                            }))
                     .then(literal("reset")
                             .executes(context -> {
                                 timerX = 10;
@@ -140,6 +151,7 @@ public class ArrowClient implements ClientModInitializer {
                 timerX = config.x;
                 timerY = config.y;
                 scale = config.scale;
+                expireAlertEnabled = config.expireAlertEnabled;
             }
         } catch (IOException e) {
             e.printStackTrace();
@@ -152,6 +164,7 @@ public class ArrowClient implements ClientModInitializer {
             config.x = timerX;
             config.y = timerY;
             config.scale = scale;
+            config.expireAlertEnabled = expireAlertEnabled;
 
             try (FileWriter writer = new FileWriter(CONFIG_PATH.toFile())) {
                 GSON.toJson(config, writer);
@@ -161,7 +174,33 @@ public class ArrowClient implements ClientModInitializer {
         }
     }
 
+    private static void checkAndPlayExpireAlert() {
+        if (!expireAlertEnabled) return;
+
+        MinecraftClient client = MinecraftClient.getInstance();
+        if (client.world != null && client.player != null) {
+            long nearbyPlayerCount = client.world.getPlayers()
+                    .stream()
+                    .filter(p -> p != client.player)
+                    .count();
+
+            if (nearbyPlayerCount == 1) {
+                // Fixed playSound method with correct parameters
+                client.player.playSound(SoundEvents.BLOCK_NOTE_BLOCK_PLING.value(), 1.0f, 0.5f);
+                client.player.sendMessage(Text.literal("§cOpponent doesn't have slowfalling!"), true);
+            }
+        }
+    }
+
     public static void startTimer() {
         timerEndTime = System.currentTimeMillis() + (30 * 1000);
+    }
+
+    public static void stopTimer(boolean isTotemPop) {
+        // Only play expire sound if it's not from a totem pop
+        if (!isTotemPop) {
+            checkAndPlayExpireAlert();
+        }
+        timerEndTime = 0;
     }
 }
