@@ -17,11 +17,7 @@
     ]
   },
   "mixins": [
-    "arrow.mixins.json",
-    {
-      "config": "arrow.client.mixins.json",
-      "environment": "client"
-    }
+    "arrow.client.mixins.json"
   ],
   "depends": {
     "fabricloader": ">=${loader_version}",
